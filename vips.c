@@ -482,8 +482,8 @@ vips_pngsave_go(VipsImage *in, void **buf, size_t *len, int interlace, int quant
     "filter", VIPS_FOREIGN_PNG_FILTER_NONE,
     "interlace", interlace,
 #if VIPS_SUPPORT_PNG_QUANTIZATION
-    "palette", quantize,
-    "colours", colors,
+//    "palette", quantize,
+//    "colours", colors,
 #endif // VIPS_SUPPORT_PNG_QUANTIZATION
     NULL);
 }

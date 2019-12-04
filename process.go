@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/imgproxy/imgproxy/pngquant"
+	"image"
+	"image/png"
 	"math"
 	"runtime"
 
@@ -721,5 +724,40 @@ func processImage(ctx context.Context) ([]byte, context.CancelFunc, error) {
 		return saveImageToFitBytes(po, img)
 	}
 
-	return img.Save(po.Format, po.Quality)
+	imageData, processcancel, err := img.Save(po.Format, po.Quality)
+	if err != nil {
+		return imageData, processcancel, err
+	}
+
+	if po.Format != imageTypePNG || !conf.PngQuantize {
+		return imageData, processcancel, nil
+	}
+
+	tmp, tmpErr := maybePngquant(imageData, po.Quality, conf.PngQuantizationColors)
+	if tmpErr == nil {
+		imageData = tmp
+	}
+
+	return imageData, processcancel, nil
+}
+
+func maybePngquant(imageData []byte, quality int, maxColors int) ([]byte, error) {
+	img, format, err := image.Decode(bytes.NewReader(imageData))
+	if err != nil {
+		return nil, err
+	}
+
+	if format != "png" {
+		return imageData, nil
+	}
+
+	speed := 5 // 1~10
+	img, err = pngquant.Compress(img, quality, speed, maxColors)
+	buf := new(bytes.Buffer)
+	err = png.Encode(buf, img)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
